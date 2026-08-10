@@ -1,0 +1,9 @@
+{
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/cpp-engine/build/compile_commands.json",
+  "pandoc.executable": "",
+  "pandoc.pdfOptString": "--pdf-engine=lualatex -V geometry:a4paper -V geometry:margin=2.5cm -V geometry:nohead",
+  "pandoc.docxOptString": "",
+  "pandoc.htmlOptString": "-s -t html5",
+  "cmake.sourceDirectory": "${workspaceFolder}/cpp-engine"
+}

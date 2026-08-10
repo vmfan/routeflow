@@ -1,0 +1,14 @@
+# Build & Dependencies
+node_modules/
+build*/
+CMakeUserPresets.json
+bin/
+*.o
+.a
+.env
+api/venv/
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
