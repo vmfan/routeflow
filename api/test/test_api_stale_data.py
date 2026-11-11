@@ -195,3 +195,38 @@ def test_route_allows_snapshot_exactly_on_freshness_boundary(monkeypatch, fresh_
     )
 
     assert response.status_code != 503
+
+def test_route_accepts_uniswap_snapshot_within_block_time_budget(monkeypatch, fresh_main, client):
+    now_ms = int(time.time() * 1000)
+
+    _patch_redis(
+        monkeypatch,
+        fresh_main,
+        binance_data=_valid_binance_snapshot(now_ms),
+        uniswap_data=_valid_uniswap_snapshot(now_ms - 20_000),
+    )
+
+    response = client.post(
+        "/api/route",
+        json={"symbol": "ETHUSDT", "side": "buy", "size": 1.0, "enable_split": False},
+    )
+
+    assert response.status_code != 503
+
+
+def test_route_returns_503_when_uniswap_snapshot_exceeds_limit(monkeypatch, fresh_main, client):
+    now_ms = int(time.time() * 1000)
+
+    _patch_redis(
+        monkeypatch,
+        fresh_main,
+        binance_data=_valid_binance_snapshot(now_ms),
+        uniswap_data=_valid_uniswap_snapshot(now_ms - (MAX_UNISWAP_POOL_AGE_MS + 1_000)),
+    )
+
+    response = client.post(
+        "/api/route",
+        json={"symbol": "ETHUSDT", "side": "buy", "size": 1.0, "enable_split": False},
+    )
+
+    assert response.status_code == 503
