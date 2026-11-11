@@ -92,7 +92,9 @@ def _load_snapshot_json(redis_key: str, missing_detail: str, invalid_detail: str
     raw = redis_client.get(redis_key)
 
     if not raw:
-        raise HTTPException(status_code=404, detail=missing_detail)
+        # A missing snapshot means its producer is down (the key expired) or has not
+        # started, so market data is unavailable: 503, consistent with stale data.
+        raise HTTPException(status_code=503, detail=missing_detail)
 
     try:
         return json.loads(raw)
@@ -244,7 +246,9 @@ def _load_snapshot_json(redis_key: str, missing_detail: str, invalid_detail: str
     raw = redis_client.get(redis_key)
 
     if not raw:
-        raise HTTPException(status_code=404, detail=missing_detail)
+        # A missing snapshot means its producer is down (the key expired) or has not
+        # started, so market data is unavailable: 503, consistent with stale data.
+        raise HTTPException(status_code=503, detail=missing_detail)
 
     try:
         return json.loads(raw)
@@ -315,7 +319,7 @@ def load_binance_orderbook(symbol: str) -> routeflowengine.OrderBook:
 
     if not raw:
         raise HTTPException(
-            status_code=404,
+            status_code=503,
             detail=f"Binance order book not found in Redis for symbol {symbol.upper()}",
         )
 
@@ -385,7 +389,7 @@ def load_uniswap_pool(symbol: str) -> routeflowengine.UniswapV2Pool:
 
     if not raw:
         raise HTTPException(
-            status_code=404,
+            status_code=503,
             detail=f"Uniswap V2 pool data not found in Redis for symbol {symbol.upper()}",
         )
 

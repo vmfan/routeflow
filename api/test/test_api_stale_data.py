@@ -230,3 +230,57 @@ def test_route_returns_503_when_uniswap_snapshot_exceeds_limit(monkeypatch, fres
     )
 
     assert response.status_code == 503
+
+
+def test_route_returns_503_when_binance_snapshot_is_missing(monkeypatch, fresh_main, client):
+    # A dead Binance stream lets its Redis key expire; that must read as an outage (503), not 404.
+    now_ms = int(time.time() * 1000)
+
+    _patch_redis(
+        monkeypatch,
+        fresh_main,
+        binance_data=None,
+        uniswap_data=_valid_uniswap_snapshot(now_ms),
+    )
+
+    response = client.post(
+        "/api/route",
+        json={"symbol": "ETHUSDT", "side": "buy", "size": 1.0, "enable_split": False},
+    )
+
+    assert response.status_code == 503
+    assert "Binance" in response.json()["detail"]
+
+
+def test_route_returns_503_when_uniswap_snapshot_is_missing(monkeypatch, fresh_main, client):
+    now_ms = int(time.time() * 1000)
+
+    _patch_redis(
+        monkeypatch,
+        fresh_main,
+        binance_data=_valid_binance_snapshot(now_ms),
+        uniswap_data=None,
+    )
+
+    response = client.post(
+        "/api/route",
+        json={"symbol": "ETHUSDT", "side": "buy", "size": 1.0, "enable_split": False},
+    )
+
+    assert response.status_code == 503
+    assert "Uniswap" in response.json()["detail"]
+
+
+def test_loaders_return_503_when_a_key_expires_after_the_staleness_check(monkeypatch, fresh_main):
+    import pytest
+    from fastapi import HTTPException
+
+    _patch_redis(monkeypatch, fresh_main, binance_data=None, uniswap_data=None)
+
+    with pytest.raises(HTTPException) as binance_exc:
+        fresh_main.load_binance_orderbook("ETHUSDT")
+    with pytest.raises(HTTPException) as uniswap_exc:
+        fresh_main.load_uniswap_pool("ETHUSDT")
+
+    assert binance_exc.value.status_code == 503
+    assert uniswap_exc.value.status_code == 503
