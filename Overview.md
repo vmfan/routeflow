@@ -7,8 +7,8 @@ RouteFlow is a smart order router for cryptocurrency trading. Given an order (sy
 ## How It Works
 
 1. **Market data producers** run continuously in the background, writing live snapshots to Redis:
-   - `binance_consumer.py` — polls Binance REST every 2 seconds (top-200 order book depth, TTL 10s)
-   - `uniswap_pool_producer.py` — calls `getReserves()` via Ethereum RPC every 10 seconds (TTL 30s)
+   - `binance_consumer.py` — streams Binance `@depth@100ms` diffs over WebSocket into a local order book seeded from a REST snapshot (top-200 depth, TTL 10s); resyncs on gaps and reconnects
+   - `uniswap_pool_producer.py` — every 2 seconds calls `getReserves()` pinned to the latest block via Ethereum RPC (token metadata cached; staleness measured from the block timestamp; TTL 60s)
 
 2. **The API** (`POST /api/route`) receives an order request, loads fresh snapshots from Redis, and calls the C++ routing engine via pybind11.
 
@@ -42,7 +42,7 @@ RouteFlow is a smart order router for cryptocurrency trading. Given an order (sy
 └──────┬───────────┬──────────┘
        │           │
 Binance Producer  Uniswap Producer
-(REST, every 2s)  (ETH RPC, every 10s)
+(WebSocket diffs)  (ETH RPC, every 2s)
 ```
 
 ---

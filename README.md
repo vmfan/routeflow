@@ -27,15 +27,15 @@ BINANCE_REST_BASE=https://api.binance.com
 ETH_RPC_URL=YOUR_ETH_RPC_URL
 
 MAX_BINANCE_ORDERBOOK_AGE_MS=5000
-MAX_UNISWAP_POOL_AGE_MS=15000
+MAX_UNISWAP_POOL_AGE_MS=30000
 
 RF_SYMBOL=ETHUSDT
 UNISWAP_V2_PAIR_ADDRESS=0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852
 TOKEN_A_SYMBOL=WETH
 TOKEN_B_SYMBOL=USDT
 UNISWAP_V2_FEE_BPS=30
-POLL_INTERVAL_SECONDS=10
-REDIS_TTL_SECONDS=30
+POLL_INTERVAL_SECONDS=2
+UNISWAP_REDIS_TTL_SECONDS=60
 
 PORT=8000
 ```
@@ -98,5 +98,8 @@ curl -X POST "http://127.0.0.1:8000/api/route" \
 ### Notes
 
 - `api/uniswap_pool_producer.py` depends on `ETH_RPC_URL`.
+- The Binance producer streams `<symbol>@depth@100ms` over `BINANCE_WS_BASE`, rebuilding a local order book (up to `BINANCE_DEPTH_LIMIT`, default 200 levels) from a REST snapshot (`BINANCE_REST_BASE`). It resyncs automatically on a sequence gap, a thin book, or a reconnect.
+- The Uniswap producer reads token metadata once, then polls `get_block("latest")` + `getReserves()` (2 RPC calls per poll). Staleness is measured against the block's timestamp, so `MAX_UNISWAP_POOL_AGE_MS` must cover the block interval (~12s, ~24s on a missed slot) plus the poll interval.
+- `REDIS_TTL_SECONDS` (default 10) applies to Binance. Uniswap uses `UNISWAP_REDIS_TTL_SECONDS` (falls back to `REDIS_TTL_SECONDS`, then 60) and should stay above `MAX_UNISWAP_POOL_AGE_MS`.
 - Redis runs locally through Docker in this setup.
 - The Binance and Uniswap producers should be running before sending requests to the API.
