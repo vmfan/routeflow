@@ -13,3 +13,6 @@ websocket-client
 # Datastores
 redis
 psycopg2-binary
+
+# C++ engine build (Python bindings)
+pybind11
