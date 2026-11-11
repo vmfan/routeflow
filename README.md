@@ -63,7 +63,7 @@ Binance producer:
 ```bash
 cd api
 source venv/bin/activate
-python binance_consumer.py
+python services/binance_consumer.py
 ```
 
 Uniswap producer:
@@ -71,7 +71,7 @@ Uniswap producer:
 ```bash
 cd api
 source venv/bin/activate
-python uniswap_pool_producer.py
+python services/uniswap_pool_producer.py
 ```
 
 ### 4. Start the API server
